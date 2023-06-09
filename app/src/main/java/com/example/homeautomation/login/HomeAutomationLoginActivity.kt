@@ -1,4 +1,4 @@
-package com.example.homeautomation
+package com.example.homeautomation.login
 
 import android.content.Context
 import android.content.Intent
@@ -7,6 +7,10 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.homeautomation.signup.HomeAutomationSignupActivity
+import com.example.homeautomation.MainActivity
+import com.example.homeautomation.PreferenceManager
+import com.example.homeautomation.R
 
 class HomeAutomationLoginActivity : AppCompatActivity() {
 
@@ -31,20 +35,17 @@ class HomeAutomationLoginActivity : AppCompatActivity() {
             val password = passwordEditText.text.toString()
 
             if (validateCredentials(username, password)) {
-                // Login successful, navigate to the main functionality of the app (e.g., MainActivity)
-                val sharedPref = getSharedPreferences("my_preferences", Context.MODE_PRIVATE)
-                with (sharedPref.edit()) {
-                    putBoolean("isLoggedIn", true)
-                    apply()
-                }
+                val preferenceManager = PreferenceManager(this)
+                preferenceManager.setLoggedIn(true)
+
                 val intent = Intent(this, MainActivity::class.java)
                 startActivity(intent)
                 finish()
             } else {
-                // Invalid credentials, show an error message or perform appropriate action
                 Toast.makeText(this, "Invalid credentials", Toast.LENGTH_SHORT).show()
             }
         }
+
 
         // Set click listener for signup button
         signupButton.setOnClickListener {

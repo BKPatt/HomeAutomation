@@ -13,10 +13,13 @@
         android:theme="@style/Theme.HomeAutomation"
         tools:targetApi="31">
         <activity
-            android:name=".HomeAutomationLoginActivity"
+            android:name=".login.HomeAutomationLoginActivity"
             android:exported="false" />
         <activity
-            android:name=".HomeAutomationSignupActivity"
+            android:name=".signup.HomeAutomationSignupActivity"
+            android:exported="false" />
+        <activity
+            android:name=".settings.HomescreenSettingsActivity"
             android:exported="false" />
         <activity
             android:name=".MainActivity"

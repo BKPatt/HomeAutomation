@@ -1,4 +1,4 @@
-package com.example.homeautomation
+package com.example.homeautomation.signup
 
 import android.content.Context
 import android.content.Intent
@@ -9,6 +9,8 @@ import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
+import com.example.homeautomation.MainActivity
+import com.example.homeautomation.R
 import java.security.MessageDigest
 
 class HomeAutomationSignupActivity : AppCompatActivity() {
