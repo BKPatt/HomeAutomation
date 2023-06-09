@@ -5,34 +5,32 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import android.content.SharedPreferences
 import android.content.Context
+import android.widget.Button
+import com.example.homeautomation.login.HomeAutomationLoginActivity
+import com.example.homeautomation.settings.HomescreenSettingsActivity
 
 class MainActivity : ComponentActivity() {
-    class PreferenceManager(context: Context) {
-        private val sharedPreferences: SharedPreferences = context.getSharedPreferences("MyAppPreferences", Context.MODE_PRIVATE)
 
-        fun isLoggedIn(): Boolean {
-            return sharedPreferences.getBoolean("isLoggedIn", false)
-        }
-
-        fun setLoggedIn(isLoggedIn: Boolean) {
-            sharedPreferences.edit().putBoolean("isLoggedIn", isLoggedIn).apply()
-        }
-    }
+    private lateinit var preferenceManager: PreferenceManager
+    private lateinit var settingsButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val preferenceManager = PreferenceManager(this)
+        preferenceManager = PreferenceManager(this)
         if (!preferenceManager.isLoggedIn()) {
-            // If user is not logged in, navigate to login activity and finish main activity
             val intent = Intent(this, HomeAutomationLoginActivity::class.java)
             startActivity(intent)
             finish()
             return
-        }
-        else {
-            // Set home.xml as the content view
+        } else {
             setContentView(R.layout.home)
+            settingsButton = findViewById(R.id.settings)
+
+            settingsButton.setOnClickListener {
+                val intent = Intent(this, HomescreenSettingsActivity::class.java)
+                startActivity(intent)
+            }
         }
     }
 }
