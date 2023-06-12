@@ -30,6 +30,7 @@
         android:padding="8dp"
         android:layout_marginEnd="8dp"
         android:layout_gravity="end"
-        android:scaleType="centerInside" />
+        android:scaleType="centerInside"
+        android:clickable="true" />
 
 </androidx.appcompat.widget.Toolbar>

@@ -12,4 +12,6 @@
     <string name="menu_item1">menu_item1</string>
     <string name="menu_item2">menu_item2</string>
     <string name="menu_item3">menu_item3</string>
+    <string name="open">Open</string>
+    <string name="close">Close</string>
 </resources>
