@@ -1,6 +1,7 @@
 package com.example.homeautomation.settings
 
 import android.os.Bundle
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -9,6 +10,7 @@ import org.json.JSONArray
 
 class HomescreenSettingsActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
+    private lateinit var backButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -16,6 +18,7 @@ class HomescreenSettingsActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.switchRecyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
+        backButton = findViewById(R.id.back)
 
         // Example entities from Home Assistant API response
         val apiResponse = """
@@ -47,6 +50,10 @@ class HomescreenSettingsActivity : AppCompatActivity() {
 
         // Update the RecyclerView with the entities
         recyclerView.adapter = EntityAdapter(entities)
+
+        backButton.setOnClickListener {
+            finish()
+        }
     }
 
     // Function to parse entities from the API response

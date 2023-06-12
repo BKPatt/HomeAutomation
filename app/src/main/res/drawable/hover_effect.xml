@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_hovered="true">
+        <shape>
+            <!-- Define the background color or any other style for the hover effect -->
+            <solid android:color="#CCCCCC" />
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <!-- Define the default background color or style -->
+            <solid android:color="#FFFFFF" />
+        </shape>
+    </item>
+</selector>

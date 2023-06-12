@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#4682B4" />
+            <size
+                android:width="48dp"
+                android:height="48dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/button_overlay" />
+            <size
+                android:width="52dp"
+                android:height="52dp" />
+            <padding
+                android:bottom="2dp"
+                android:top="2dp"
+                android:right="2dp"
+                android:left="2dp"/>
+        </shape>
+    </item>
+</layer-list>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content" >
+
+    <item
+        android:id="@+id/yourProfile"
+        android:title="Your Profile"
+        android:background="@drawable/hover_effect" />
+    <item
+        android:id="@+id/help"
+        android:title="Help"
+        android:background="@drawable/hover_effect" />
+    <item
+        android:id="@+id/logout"
+        android:title="Sign Out"
+        android:background="@drawable/hover_effect" />
+
+</menu>
