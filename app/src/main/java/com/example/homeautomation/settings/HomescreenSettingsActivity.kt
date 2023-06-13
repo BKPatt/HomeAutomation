@@ -16,7 +16,7 @@ class HomescreenSettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.settings)
 
-        recyclerView = findViewById(R.id.switchRecyclerView)
+        recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
         backButton = findViewById(R.id.back)
 
@@ -40,6 +40,50 @@ class HomescreenSettingsActivity : AppCompatActivity() {
                         "temperature": 22.5,
                         "current_mode": "cool",
                         "available_modes": ["cool", "heat", "auto"]
+                    }
+                },
+                {
+                    "entity_id": "brightness.living_room",
+                    "state": "50",
+                    "attributes": {
+                        "friendly_name": "Living Room Brightness",
+                        "brightness": 50
+                    }
+                },
+                {
+                    "entity_id": "color.living_room",
+                    "state": "red",
+                    "attributes": {
+                        "friendly_name": "Living Room Color",
+                        "color": "red"
+                    }
+                },
+                {
+                    "entity_id": "checkbox.kitchen",
+                    "state": "on",
+                    "attributes": {
+                        "friendly_name": "Kitchen Checkbox"
+                    }
+                },
+                {
+                    "entity_id": "date.living_room",
+                    "state": "2023-06-13",
+                    "attributes": {
+                        "friendly_name": "Living Room Date"
+                    }
+                },
+                {
+                    "entity_id": "text_input.bedroom",
+                    "state": "Hello, World!",
+                    "attributes": {
+                        "friendly_name": "Bedroom Text Input"
+                    }
+                },
+                {
+                    "entity_id": "button.trigger_automation",
+                    "state": "off",
+                    "attributes": {
+                        "friendly_name": "Trigger Automation"
                     }
                 }
             ]
