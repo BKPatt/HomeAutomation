@@ -1,34 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:layout_height="match_parent">
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:padding="16dp">
+        android:background="#FFFFFF">
 
-        <TextView
-            android:id="@+id/home_header"
-            android:layout_width="wrap_content"
+        <include
+            layout="@layout/toolbar"
+            android:id="@+id/toolbarView"
             android:layout_height="wrap_content"
-            android:text="Welcome to Home Automation"
-            android:textSize="24sp"
-            android:layout_marginBottom="16dp"
-            />
+            android:layout_width="match_parent"
+            android:layout_marginBottom="8dp" />
 
-        <Button
-            android:id="@+id/settings"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:text="Settings"
-            />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="16dp">
 
-        <!--TODO: Add ability to add settings together to show under settings-->
-        <!--TODO: Add ability to show status of grouped settings like (HOME SECURE? Y/N)-->
+            <TextView
+                android:id="@+id/home_header"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Welcome to Home Automation"
+                android:textSize="24sp"
+                android:layout_marginBottom="16dp" />
 
-    </LinearLayout>
-</RelativeLayout>
+            <Button
+                android:id="@+id/settings"
+                android:layout_width="200dp"
+                android:layout_height="wrap_content"
+                android:text="Settings" />
+
+            <!--TODO: Add ability to add settings together to show under settings-->
+            <!--TODO: Add ability to show status of grouped settings like (HOME SECURE? Y/N)-->
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+    <include layout="@layout/navigation_drawer" />
+
+</androidx.drawerlayout.widget.DrawerLayout>

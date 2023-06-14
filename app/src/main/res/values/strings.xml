@@ -1,8 +1,18 @@
 <resources>
-    <string name="app_name">HomeAutomation</string>
+    <string name="app_name">Home Automation</string>
     <string name="username_hint">Username</string>
     <string name="password_hint">Password</string>
     <string name="login">Login</string>
     <string name="signup">Sign Up</string>
     <string name="back">Back</string>
+    <string name="logout">Logout</string>
+    <string name="profile">Profile</string>
+    <string name="options">Options</string>
+    <string name="username">Username</string>
+    <string name="menu_item1">menu_item1</string>
+    <string name="menu_item2">menu_item2</string>
+    <string name="menu_item3">menu_item3</string>
+    <string name="open">Open</string>
+    <string name="close">Close</string>
+    <string name="edit">Edit</string>
 </resources>
