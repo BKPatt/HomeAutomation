@@ -14,4 +14,5 @@
     <string name="menu_item3">menu_item3</string>
     <string name="open">Open</string>
     <string name="close">Close</string>
+    <string name="edit">Edit</string>
 </resources>

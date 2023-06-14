@@ -9,5 +9,7 @@ data class HomeAssistantEntity(
     val temperature: Double,
     val currentMode: String,
     val availableModes: List<String>,
-    val type: String
+    val type: String,
+    val clickable: Boolean,
+    val enabled: Boolean
 )

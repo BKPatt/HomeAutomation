@@ -1,6 +1,7 @@
 package com.example.homeautomation.settings
 
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -11,6 +12,9 @@ import org.json.JSONArray
 class HomescreenSettingsActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var backButton: Button
+    private lateinit var editButton: Button
+    private lateinit var backAfterEdit: Button
+    private val entities = mutableListOf<HomeAssistantEntity>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -19,6 +23,8 @@ class HomescreenSettingsActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
         backButton = findViewById(R.id.back)
+        editButton = findViewById(R.id.edit)
+        backAfterEdit = findViewById(R.id.backAfterEdit)
 
         // Example entities from Home Assistant API response
         val apiResponse = """
@@ -90,13 +96,36 @@ class HomescreenSettingsActivity : AppCompatActivity() {
         """.trimIndent()
 
         // Parse the JSON response and create entities
-        val entities = parseEntitiesFromApiResponse(apiResponse)
+        entities.addAll(parseEntitiesFromApiResponse(apiResponse))
 
         // Update the RecyclerView with the entities
         recyclerView.adapter = EntityAdapter(entities)
 
         backButton.setOnClickListener {
             finish()
+        }
+        editButton.setOnClickListener {
+            backButton.visibility = View.GONE
+            editButton.visibility = View.GONE
+            backAfterEdit.visibility = View.VISIBLE
+            val updatedEntities = entities.map { entity ->
+                entity.copy(clickable = true, enabled = false)
+            }
+            entities.clear()
+            entities.addAll(updatedEntities)
+            recyclerView.adapter?.notifyDataSetChanged()
+        }
+
+        backAfterEdit.setOnClickListener{
+            backButton.visibility = View.VISIBLE
+            editButton.visibility = View.VISIBLE
+            backAfterEdit.visibility = View.GONE
+            val updatedEntities = entities.map { entity ->
+                entity.copy(clickable = false, enabled = true)
+            }
+            entities.clear()
+            entities.addAll(updatedEntities)
+            recyclerView.adapter?.notifyDataSetChanged()
         }
     }
 
@@ -129,7 +158,9 @@ class HomescreenSettingsActivity : AppCompatActivity() {
                 temperature,
                 currentMode,
                 availableModes ?: listOf(),
-                type
+                type,
+                clickable = false,
+                enabled = true
             )
 
             entities.add(entity)
@@ -149,4 +180,3 @@ class HomescreenSettingsActivity : AppCompatActivity() {
         return list
     }
 }
-
