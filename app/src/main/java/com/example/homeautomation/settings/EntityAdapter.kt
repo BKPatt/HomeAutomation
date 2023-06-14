@@ -80,6 +80,7 @@ class EntityAdapter(private val entities: List<HomeAssistantEntity>) :
         // create and set layout of the dialog
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_custom, null)
         val field1EditText = dialogView.findViewById<EditText>(R.id.field1)
+        // TODO: change field 2 to dropdown instead of text input
         val field2EditText = dialogView.findViewById<EditText>(R.id.field2)
 
         // set initial text
@@ -94,6 +95,8 @@ class EntityAdapter(private val entities: List<HomeAssistantEntity>) :
                 // save the inputs when the positive button is clicked
                 val field1Input = field1EditText.text.toString()
                 val field2Input = field2EditText.text.toString()
+
+                // TODO: Save the input from user
             }
             .setNegativeButton("Cancel", null)
             .create()
@@ -182,7 +185,7 @@ class EntityAdapter(private val entities: List<HomeAssistantEntity>) :
                                 .setPositiveButton(
                                     "Confirm",
                                     ColorEnvelopeListener { envelope, fromUser ->
-                                        // do something with envelope.color here
+                                        // TODO: something with envelope.color here
                                     })
                                 .setNegativeButton(
                                     "Cancel",
@@ -240,7 +243,9 @@ class EntityAdapter(private val entities: List<HomeAssistantEntity>) :
             ITEM_TYPE_BUTTON -> {
                 generalHolder.views[R.id.button]?.let { view ->
                     (view as? Button)?.apply {
-                        setOnClickListener { /* ... */ }
+                        setOnClickListener {
+                            // TODO: Add call
+                        }
                         isEnabled = entity.enabled
                     }
                 }
