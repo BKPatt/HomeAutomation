@@ -1,7 +1,12 @@
 package com.example.homeautomation.settings
 
 import android.app.DatePickerDialog
+import android.content.Context
 import android.content.DialogInterface
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,6 +18,7 @@ import android.widget.SeekBar
 import android.widget.Spinner
 import android.widget.Switch
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.RecyclerView
 import com.example.homeautomation.R
 import com.skydoves.colorpickerview.ColorPickerDialog
@@ -56,6 +62,50 @@ class EntityAdapter(private val entities: List<HomeAssistantEntity>) :
         return GeneralViewHolder(view)
     }
 
+    private fun viewTypeToString(viewType: Int): String {
+        return when (viewType) {
+            ITEM_TYPE_SWITCH -> "Switch"
+            ITEM_TYPE_DROPDOWN -> "Dropdown"
+            ITEM_TYPE_SCROLLABLE_BAR -> "Scrollable Bar"
+            ITEM_TYPE_COLOR_PICKER -> "Color Picker"
+            ITEM_TYPE_CHECKBOX -> "Checkbox"
+            ITEM_TYPE_DATE_PICKER -> "Date Picker"
+            ITEM_TYPE_TEXT_INPUT -> "Text Input"
+            ITEM_TYPE_BUTTON -> "Button"
+            else -> throw IllegalArgumentException("Invalid view type")
+        }
+    }
+
+    fun showEditableDialog(context: Context, viewType: Int, entity: HomeAssistantEntity) {
+        // create and set layout of the dialog
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_custom, null)
+        val field1EditText = dialogView.findViewById<EditText>(R.id.field1)
+        val field2EditText = dialogView.findViewById<EditText>(R.id.field2)
+
+        // set initial text
+        field1EditText.setText(entity.friendlyName)
+
+        // Set the input type for the second field based on the entity
+        field2EditText.setText(viewTypeToString(viewType))
+
+        AlertDialog.Builder(context)
+            .setView(dialogView)
+            .setPositiveButton("Save") { _, _ ->
+                // save the inputs when the positive button is clicked
+                val field1Input = field1EditText.text.toString()
+                val field2Input = field2EditText.text.toString()
+            }
+            .setNegativeButton("Cancel", null)
+            .create()
+            .show()
+    }
+
+    private fun scaleDrawable(context: Context, drawableId: Int, width: Int, height: Int): Drawable {
+        val bitmap = BitmapFactory.decodeResource(context.resources, drawableId)
+        val bitmapScaled = Bitmap.createScaledBitmap(bitmap, width, height, true)
+        return BitmapDrawable(context.resources, bitmapScaled)
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GeneralViewHolder {
         return when (viewType) {
             ITEM_TYPE_SWITCH -> createGeneralViewHolder(parent, R.layout.switch_item)
@@ -76,93 +126,129 @@ class EntityAdapter(private val entities: List<HomeAssistantEntity>) :
         val generalHolder = holder as GeneralViewHolder
 
         generalHolder.views[R.id.labelTextView]?.let { view ->
-            (view as? TextView)?.text = entity.friendlyName
+            (view as? TextView)?.apply {
+                text = entity.friendlyName
+                isClickable = entity.clickable
+                if (entity.clickable) {
+                    val editDrawable = scaleDrawable(context, R.drawable.edit, 30, 30)
+                    setCompoundDrawablesWithIntrinsicBounds(null, null, editDrawable, null)
+                    compoundDrawablePadding = 10
+                    setOnClickListener {
+                        showEditableDialog(context, viewType, entity)
+                    }
+                } else {
+                    setOnClickListener(null)
+                    setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
+                }
+            }
         }
 
         when (viewType) {
             ITEM_TYPE_SWITCH -> {
                 generalHolder.views[R.id.entitySwitch]?.let { view ->
-                    (view as? Switch)?.isChecked = entity.state == "on"
+                    (view as? Switch)?.apply {
+                        isChecked = entity.state == "on"
+                        isEnabled = entity.enabled
+                    }
                 }
             }
             ITEM_TYPE_DROPDOWN -> {
                 generalHolder.views[R.id.optionsSpinner]?.let { view ->
-                    val adapter = ArrayAdapter(
-                        view.context,
-                        android.R.layout.simple_spinner_item,
-                        entity.availableModes ?: listOf()
-                    )
-                    (view as? Spinner)?.adapter = adapter
+                    (view as? Spinner)?.apply {
+                        adapter = ArrayAdapter(
+                            context,
+                            android.R.layout.simple_spinner_item,
+                            entity.availableModes ?: listOf()
+                        )
+                        isEnabled = entity.enabled
+                    }
                 }
             }
             ITEM_TYPE_SCROLLABLE_BAR -> {
                 generalHolder.views[R.id.seekBar]?.let { view ->
-                    (view as? SeekBar)?.progress = entity.brightness
+                    (view as? SeekBar)?.apply {
+                        progress = entity.brightness
+                        isEnabled = entity.enabled
+                    }
                 }
             }
             ITEM_TYPE_COLOR_PICKER -> {
                 generalHolder.views[R.id.colorPickerButton]?.let { view ->
-                    (view as? Button)?.setOnClickListener {
-                        ColorPickerDialog.Builder(view.context)
-                            .setTitle("ColorPicker Dialog")
-                            .setPreferenceName("MyColorPickerDialog")
-                            .setPositiveButton(
-                                "Confirm",
-                                ColorEnvelopeListener { envelope, fromUser ->
-                                    // do something with envelope.color here
-                                })
-                            .setNegativeButton(
-                                "Cancel",
-                                DialogInterface.OnClickListener { dialogInterface, _ ->
-                                    dialogInterface.dismiss()
-                                })
-                            .attachAlphaSlideBar(true) // default value is true
-                            .attachBrightnessSlideBar(true) // default value is true
-                            .setBottomSpace(12) // set bottom space between last slidebar and buttons
-                            .show()
+                    (view as? Button)?.apply {
+                        setOnClickListener {
+                            ColorPickerDialog.Builder(view.context)
+                                .setTitle("ColorPicker Dialog")
+                                .setPreferenceName("MyColorPickerDialog")
+                                .setPositiveButton(
+                                    "Confirm",
+                                    ColorEnvelopeListener { envelope, fromUser ->
+                                        // do something with envelope.color here
+                                    })
+                                .setNegativeButton(
+                                    "Cancel",
+                                    DialogInterface.OnClickListener { dialogInterface, _ ->
+                                        dialogInterface.dismiss()
+                                    })
+                                .attachAlphaSlideBar(true) // default value is true
+                                .attachBrightnessSlideBar(true) // default value is true
+                                .setBottomSpace(12) // set bottom space between last slidebar and buttons
+                                .show()
+                        }
+                        isEnabled = entity.enabled
                     }
                 }
             }
             ITEM_TYPE_CHECKBOX -> {
                 generalHolder.views[R.id.checkbox]?.let { view ->
-                    (view as? CheckBox)?.isChecked = entity.state == "on"
+                    (view as? CheckBox)?.apply {
+                        isChecked = entity.state == "on"
+                        isEnabled = entity.enabled
+                    }
                 }
             }
             ITEM_TYPE_DATE_PICKER -> {
                 generalHolder.views[R.id.datePicker]?.let { view ->
                     val textView = view as? TextView
-                    textView?.text = entity.state
-                    textView?.setOnClickListener {
-                        val calendar = Calendar.getInstance()
-                        val datePickerDialog = DatePickerDialog(
-                            it.context,
-                            { _, year, month, dayOfMonth ->
-                                textView.text = "$year-${month + 1}-$dayOfMonth"
-                            },
-                            calendar.get(Calendar.YEAR),
-                            calendar.get(Calendar.MONTH),
-                            calendar.get(Calendar.DAY_OF_MONTH)
-                        )
-                        datePickerDialog.datePicker.minDate = calendar.timeInMillis
-                        datePickerDialog.show()
+                    textView?.apply {
+                        text = entity.state
+                        setOnClickListener {
+                            val calendar = Calendar.getInstance()
+                            val datePickerDialog = DatePickerDialog(
+                                it.context,
+                                { _, year, month, dayOfMonth ->
+                                    textView.text = "$year-${month + 1}-$dayOfMonth"
+                                },
+                                calendar.get(Calendar.YEAR),
+                                calendar.get(Calendar.MONTH),
+                                calendar.get(Calendar.DAY_OF_MONTH)
+                            )
+                            datePickerDialog.datePicker.minDate = calendar.timeInMillis
+                            datePickerDialog.show()
+                        }
+                        isEnabled = entity.enabled
                     }
                 }
             }
             ITEM_TYPE_TEXT_INPUT -> {
                 generalHolder.views[R.id.textInput]?.let { view ->
-                    (view as? EditText)?.setText(entity.state)
+                    (view as? EditText)?.apply {
+                        setText(entity.state)
+                        isEnabled = entity.enabled
+                    }
                 }
             }
             ITEM_TYPE_BUTTON -> {
                 generalHolder.views[R.id.button]?.let { view ->
-                    (view as? Button)?.setOnClickListener {
-                        // Do something on button click
+                    (view as? Button)?.apply {
+                        setOnClickListener { /* ... */ }
+                        isEnabled = entity.enabled
                     }
                 }
             }
             else -> throw IllegalArgumentException("Invalid view type")
         }
     }
+
 
 
 
