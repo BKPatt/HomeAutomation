@@ -96,7 +96,7 @@ class HomescreenSettingsActivity : AppCompatActivity() {
         """.trimIndent()
 
         // Parse the JSON response and create entities
-        entities.addAll(parseEntitiesFromApiResponse(apiResponse)) // Update this line
+        entities.addAll(parseEntitiesFromApiResponse(apiResponse))
 
         // Update the RecyclerView with the entities
         recyclerView.adapter = EntityAdapter(entities)
