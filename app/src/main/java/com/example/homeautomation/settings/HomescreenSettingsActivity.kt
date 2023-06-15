@@ -16,18 +16,8 @@ class HomescreenSettingsActivity : AppCompatActivity() {
     private lateinit var backAfterEdit: Button
     private val entities = mutableListOf<HomeAssistantEntity>()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.settings)
-
-        recyclerView = findViewById(R.id.recyclerView)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        backButton = findViewById(R.id.back)
-        editButton = findViewById(R.id.edit)
-        backAfterEdit = findViewById(R.id.backAfterEdit)
-
-        // Example entities from Home Assistant API response
-        val apiResponse = """
+    // Example entities from Home Assistant API response
+    private val apiResponse = """
             [
                 {
                     "entity_id": "light.living_room",
@@ -91,15 +81,56 @@ class HomescreenSettingsActivity : AppCompatActivity() {
                     "attributes": {
                         "friendly_name": "Trigger Automation"
                     }
+                },
+                {
+                    "entity_id": "light.kitchen",
+                    "state": "off",
+                    "attributes": {
+                        "friendly_name": "Kitchen Light",
+                        "brightness": 120,
+                        "color_temp": 300
+                    }
+                },
+                {
+                    "entity_id": "climate.living_room",
+                    "state": "heat",
+                    "attributes": {
+                        "friendly_name": "Living Room Climate",
+                        "temperature": 25.0,
+                        "current_mode": "heat",
+                        "available_modes": ["cool", "heat", "auto"]
+                    }
+                },
+                {
+                    "entity_id": "brightness.bedroom",
+                    "state": "75",
+                    "attributes": {
+                        "friendly_name": "Bedroom Brightness",
+                        "brightness": 75
+                    }
+                },
+                {
+                    "entity_id": "color.bedroom",
+                    "state": "blue",
+                    "attributes": {
+                        "friendly_name": "Bedroom Color",
+                        "color": "blue"
+                    }
                 }
             ]
         """.trimIndent()
 
-        // Parse the JSON response and create entities
-        entities.addAll(parseEntitiesFromApiResponse(apiResponse))
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.settings)
 
-        // Update the RecyclerView with the entities
-        recyclerView.adapter = EntityAdapter(entities)
+        recyclerView = findViewById(R.id.inputRecyclerView)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        backButton = findViewById(R.id.back)
+        editButton = findViewById(R.id.edit)
+        backAfterEdit = findViewById(R.id.backAfterEdit)
+
+        createEntities(apiResponse)
 
         backButton.setOnClickListener {
             finish()
@@ -111,22 +142,58 @@ class HomescreenSettingsActivity : AppCompatActivity() {
             val updatedEntities = entities.map { entity ->
                 entity.copy(clickable = true, enabled = false)
             }
-            entities.clear()
-            entities.addAll(updatedEntities)
-            recyclerView.adapter?.notifyDataSetChanged()
+            updateEntities(updatedEntities)
         }
 
-        backAfterEdit.setOnClickListener{
+        backAfterEdit.setOnClickListener {
             backButton.visibility = View.VISIBLE
             editButton.visibility = View.VISIBLE
             backAfterEdit.visibility = View.GONE
             val updatedEntities = entities.map { entity ->
                 entity.copy(clickable = false, enabled = true)
             }
-            entities.clear()
-            entities.addAll(updatedEntities)
-            recyclerView.adapter?.notifyDataSetChanged()
+            updateEntities(updatedEntities)
         }
+    }
+
+    private fun createEntities(apiResponse: String){
+        // Parse the JSON response and create entities
+        val allEntities = parseEntitiesFromApiResponse(apiResponse)
+        entities.addAll(allEntities)
+
+        // Group entities by their group name and create GroupedEntity objects
+        val groupedEntities = allEntities.groupBy { it.groupName }.map { GroupedEntity(it.key, it.value) }
+
+        // Create a new list of RecyclerViewItems
+        val recyclerViewItems = mutableListOf<RecyclerViewItem>()
+
+        // Add group titles and their corresponding components to the list
+        for (groupedEntity in groupedEntities) {
+            recyclerViewItems.add(GroupTitle(groupedEntity.groupName))
+            for (entity in groupedEntity.entities) {
+                recyclerViewItems.add(Component(entity))
+            }
+        }
+
+        // Set the RecyclerView adapter with the new list
+        recyclerView.adapter = EntityAdapter(recyclerViewItems)
+    }
+
+    private fun updateEntities(updatedEntities: List<HomeAssistantEntity>) {
+        entities.clear()
+        entities.addAll(updatedEntities)
+
+        val groupedEntities = updatedEntities.groupBy { it.groupName }.map { GroupedEntity(it.key, it.value) }
+
+        val recyclerViewItems = mutableListOf<RecyclerViewItem>()
+        for (groupedEntity in groupedEntities) {
+            recyclerViewItems.add(GroupTitle(groupedEntity.groupName))
+            for (entity in groupedEntity.entities) {
+                recyclerViewItems.add(Component(entity))
+            }
+        }
+
+        recyclerView.adapter = EntityAdapter(recyclerViewItems)
     }
 
     // Function to parse entities from the API response
@@ -141,6 +208,9 @@ class HomescreenSettingsActivity : AppCompatActivity() {
             val type = entityId.split('.')[0]  // Use the first part of entity_id as type
             val state = jsonObject.getString("state")
             val attributes = jsonObject.optJSONObject("attributes")
+            val groupName = entityId.split(".")[1].replace("_", " ").split(" ").joinToString(" ") { word ->
+                word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+            }
 
             val friendlyName = attributes?.getString("friendly_name") ?: ""
             val brightness = attributes?.optInt("brightness") ?: 0
@@ -159,6 +229,7 @@ class HomescreenSettingsActivity : AppCompatActivity() {
                 currentMode,
                 availableModes ?: listOf(),
                 type,
+                groupName,
                 clickable = false,
                 enabled = true
             )
@@ -168,8 +239,6 @@ class HomescreenSettingsActivity : AppCompatActivity() {
 
         return entities
     }
-
-
 
     private fun jsonArrayToList(jsonArray: JSONArray): List<String> {
         val list = mutableListOf<String>()
