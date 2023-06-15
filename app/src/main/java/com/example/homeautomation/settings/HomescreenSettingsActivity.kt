@@ -1,6 +1,7 @@
 package com.example.homeautomation.settings
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
@@ -16,6 +17,110 @@ class HomescreenSettingsActivity : AppCompatActivity() {
     private lateinit var backAfterEdit: Button
     private val entities = mutableListOf<HomeAssistantEntity>()
 
+    // Example entities from Home Assistant API response
+    private val apiResponse = """
+            [
+                {
+                    "entity_id": "light.living_room",
+                    "state": "on",
+                    "attributes": {
+                        "friendly_name": "Living Room Light",
+                        "brightness": 180,
+                        "color_temp": 350
+                    }
+                },
+                {
+                    "entity_id": "climate.bedroom",
+                    "state": "cool",
+                    "attributes": {
+                        "friendly_name": "Bedroom Climate",
+                        "temperature": 22.5,
+                        "current_mode": "cool",
+                        "available_modes": ["cool", "heat", "auto"]
+                    }
+                },
+                {
+                    "entity_id": "brightness.living_room",
+                    "state": "50",
+                    "attributes": {
+                        "friendly_name": "Living Room Brightness",
+                        "brightness": 50
+                    }
+                },
+                {
+                    "entity_id": "color.living_room",
+                    "state": "red",
+                    "attributes": {
+                        "friendly_name": "Living Room Color",
+                        "color": "red"
+                    }
+                },
+                {
+                    "entity_id": "checkbox.kitchen",
+                    "state": "on",
+                    "attributes": {
+                        "friendly_name": "Kitchen Checkbox"
+                    }
+                },
+                {
+                    "entity_id": "date.living_room",
+                    "state": "2023-06-13",
+                    "attributes": {
+                        "friendly_name": "Living Room Date"
+                    }
+                },
+                {
+                    "entity_id": "text_input.bedroom",
+                    "state": "Hello, World!",
+                    "attributes": {
+                        "friendly_name": "Bedroom Text Input"
+                    }
+                },
+                {
+                    "entity_id": "button.trigger_automation",
+                    "state": "off",
+                    "attributes": {
+                        "friendly_name": "Trigger Automation"
+                    }
+                },
+                {
+                    "entity_id": "light.kitchen",
+                    "state": "off",
+                    "attributes": {
+                        "friendly_name": "Kitchen Light",
+                        "brightness": 120,
+                        "color_temp": 300
+                    }
+                },
+                {
+                    "entity_id": "climate.living_room",
+                    "state": "heat",
+                    "attributes": {
+                        "friendly_name": "Living Room Climate",
+                        "temperature": 25.0,
+                        "current_mode": "heat",
+                        "available_modes": ["cool", "heat", "auto"]
+                    }
+                },
+                {
+                    "entity_id": "brightness.bedroom",
+                    "state": "75",
+                    "attributes": {
+                        "friendly_name": "Bedroom Brightness",
+                        "brightness": 75
+                    }
+                },
+                {
+                    "entity_id": "color.bedroom",
+                    "state": "blue",
+                    "attributes": {
+                        "friendly_name": "Bedroom Color",
+                        "color": "blue"
+                    }
+                }
+            ]
+        """.trimIndent()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.settings)
@@ -26,112 +131,37 @@ class HomescreenSettingsActivity : AppCompatActivity() {
         editButton = findViewById(R.id.edit)
         backAfterEdit = findViewById(R.id.backAfterEdit)
 
-        // Example entities from Home Assistant API response
-        val apiResponse = """
-        [
-            {
-                "entity_id": "light.living_room",
-                "state": "on",
-                "attributes": {
-                    "friendly_name": "Living Room Light",
-                    "brightness": 180,
-                    "color_temp": 350
-                }
-            },
-            {
-                "entity_id": "climate.bedroom",
-                "state": "cool",
-                "attributes": {
-                    "friendly_name": "Bedroom Climate",
-                    "temperature": 22.5,
-                    "current_mode": "cool",
-                    "available_modes": ["cool", "heat", "auto"]
-                }
-            },
-            {
-                "entity_id": "brightness.living_room",
-                "state": "50",
-                "attributes": {
-                    "friendly_name": "Living Room Brightness",
-                    "brightness": 50
-                }
-            },
-            {
-                "entity_id": "color.living_room",
-                "state": "red",
-                "attributes": {
-                    "friendly_name": "Living Room Color",
-                    "color": "red"
-                }
-            },
-            {
-                "entity_id": "checkbox.kitchen",
-                "state": "on",
-                "attributes": {
-                    "friendly_name": "Kitchen Checkbox"
-                }
-            },
-            {
-                "entity_id": "date.living_room",
-                "state": "2023-06-13",
-                "attributes": {
-                    "friendly_name": "Living Room Date"
-                }
-            },
-            {
-                "entity_id": "text_input.bedroom",
-                "state": "Hello, World!",
-                "attributes": {
-                    "friendly_name": "Bedroom Text Input"
-                }
-            },
-            {
-                "entity_id": "button.trigger_automation",
-                "state": "off",
-                "attributes": {
-                    "friendly_name": "Trigger Automation"
-                }
-            },
-            {
-                "entity_id": "light.kitchen",
-                "state": "off",
-                "attributes": {
-                    "friendly_name": "Kitchen Light",
-                    "brightness": 120,
-                    "color_temp": 300
-                }
-            },
-            {
-                "entity_id": "climate.living_room",
-                "state": "heat",
-                "attributes": {
-                    "friendly_name": "Living Room Climate",
-                    "temperature": 25.0,
-                    "current_mode": "heat",
-                    "available_modes": ["cool", "heat", "auto"]
-                }
-            },
-            {
-                "entity_id": "brightness.bedroom",
-                "state": "75",
-                "attributes": {
-                    "friendly_name": "Bedroom Brightness",
-                    "brightness": 75
-                }
-            },
-            {
-                "entity_id": "color.bedroom",
-                "state": "blue",
-                "attributes": {
-                    "friendly_name": "Bedroom Color",
-                    "color": "blue"
-                }
-            }
-        ]
-        """.trimIndent()
+        createEntities(apiResponse)
 
+        backButton.setOnClickListener {
+            finish()
+        }
+        editButton.setOnClickListener {
+            backButton.visibility = View.GONE
+            editButton.visibility = View.GONE
+            backAfterEdit.visibility = View.VISIBLE
+            val updatedEntities = entities.map { entity ->
+                entity.copy(clickable = true, enabled = false)
+            }
+            Log.d("Test: ", updatedEntities.toString())
+            updateEntities(updatedEntities)
+        }
+
+        backAfterEdit.setOnClickListener {
+            backButton.visibility = View.VISIBLE
+            editButton.visibility = View.VISIBLE
+            backAfterEdit.visibility = View.GONE
+            val updatedEntities = entities.map { entity ->
+                entity.copy(clickable = false, enabled = true)
+            }
+            updateEntities(updatedEntities)
+        }
+    }
+
+    private fun createEntities(apiResponse: String){
         // Parse the JSON response and create entities
         val allEntities = parseEntitiesFromApiResponse(apiResponse)
+        entities.addAll(allEntities)
 
         // Group entities by their group name and create GroupedEntity objects
         val groupedEntities = allEntities.groupBy { it.groupName }.map { GroupedEntity(it.key, it.value) }
@@ -149,33 +179,23 @@ class HomescreenSettingsActivity : AppCompatActivity() {
 
         // Set the RecyclerView adapter with the new list
         recyclerView.adapter = EntityAdapter(recyclerViewItems)
+    }
 
-        backButton.setOnClickListener {
-            finish()
-        }
-        editButton.setOnClickListener {
-            backButton.visibility = View.GONE
-            editButton.visibility = View.GONE
-            backAfterEdit.visibility = View.VISIBLE
-            val updatedEntities = entities.map { entity ->
-                entity.copy(clickable = true, enabled = false)
+    private fun updateEntities(updatedEntities: List<HomeAssistantEntity>) {
+        entities.clear()
+        entities.addAll(updatedEntities)
+
+        val groupedEntities = updatedEntities.groupBy { it.groupName }.map { GroupedEntity(it.key, it.value) }
+
+        val recyclerViewItems = mutableListOf<RecyclerViewItem>()
+        for (groupedEntity in groupedEntities) {
+            recyclerViewItems.add(GroupTitle(groupedEntity.groupName))
+            for (entity in groupedEntity.entities) {
+                recyclerViewItems.add(Component(entity))
             }
-            entities.clear()
-            entities.addAll(updatedEntities)
-            recyclerView.adapter?.notifyDataSetChanged()
         }
 
-        backAfterEdit.setOnClickListener{
-            backButton.visibility = View.VISIBLE
-            editButton.visibility = View.VISIBLE
-            backAfterEdit.visibility = View.GONE
-            val updatedEntities = entities.map { entity ->
-                entity.copy(clickable = false, enabled = true)
-            }
-            entities.clear()
-            entities.addAll(updatedEntities)
-            recyclerView.adapter?.notifyDataSetChanged()
-        }
+        recyclerView.adapter = EntityAdapter(recyclerViewItems)
     }
 
     // Function to parse entities from the API response

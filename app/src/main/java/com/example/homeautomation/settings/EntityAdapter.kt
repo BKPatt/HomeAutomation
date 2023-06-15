@@ -25,7 +25,7 @@ import com.skydoves.colorpickerview.ColorPickerDialog
 import com.skydoves.colorpickerview.listeners.ColorEnvelopeListener
 import java.util.Calendar
 
-class EntityAdapter(private val items: List<RecyclerViewItem>) :
+class EntityAdapter(private var items: MutableList<RecyclerViewItem>) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -86,6 +86,12 @@ class EntityAdapter(private val items: List<RecyclerViewItem>) :
             ITEM_TYPE_GROUP_TITLE -> "Group Title"
             else -> throw IllegalArgumentException("Invalid view type")
         }
+    }
+
+    fun updateItems(newItems: List<RecyclerViewItem>) {
+        items.clear()
+        items.addAll(newItems)
+        notifyDataSetChanged()
     }
 
     private fun showEditableDialog(context: Context, viewType: Int, entity: HomeAssistantEntity) {
@@ -282,8 +288,7 @@ class EntityAdapter(private val items: List<RecyclerViewItem>) :
     }
 
     override fun getItemViewType(position: Int): Int {
-        val item = items[position]
-        return when (item) {
+        return when (val item = items[position]) {
             is Component -> {
                 when (item.entity.type) {
                     "light" -> ITEM_TYPE_SWITCH
