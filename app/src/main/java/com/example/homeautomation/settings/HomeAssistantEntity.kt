@@ -14,3 +14,11 @@ data class HomeAssistantEntity(
     val clickable: Boolean,
     val enabled: Boolean
 )
+
+sealed class RecyclerViewItem
+
+data class Component(val entity: HomeAssistantEntity) : RecyclerViewItem()
+
+data class GroupTitle(val title: String) : RecyclerViewItem() {
+    val groupName: String = title
+}

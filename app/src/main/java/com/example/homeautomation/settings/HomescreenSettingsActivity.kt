@@ -20,7 +20,7 @@ class HomescreenSettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.settings)
 
-        recyclerView = findViewById(R.id.recyclerView)
+        recyclerView = findViewById(R.id.inputRecyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
         backButton = findViewById(R.id.back)
         editButton = findViewById(R.id.edit)
@@ -28,81 +28,127 @@ class HomescreenSettingsActivity : AppCompatActivity() {
 
         // Example entities from Home Assistant API response
         val apiResponse = """
-            [
-                {
-                    "entity_id": "light.living_room",
-                    "state": "on",
-                    "attributes": {
-                        "friendly_name": "Living Room Light",
-                        "brightness": 180,
-                        "color_temp": 350
-                    }
-                },
-                {
-                    "entity_id": "climate.bedroom",
-                    "state": "cool",
-                    "attributes": {
-                        "friendly_name": "Bedroom Climate",
-                        "temperature": 22.5,
-                        "current_mode": "cool",
-                        "available_modes": ["cool", "heat", "auto"]
-                    }
-                },
-                {
-                    "entity_id": "brightness.living_room",
-                    "state": "50",
-                    "attributes": {
-                        "friendly_name": "Living Room Brightness",
-                        "brightness": 50
-                    }
-                },
-                {
-                    "entity_id": "color.living_room",
-                    "state": "red",
-                    "attributes": {
-                        "friendly_name": "Living Room Color",
-                        "color": "red"
-                    }
-                },
-                {
-                    "entity_id": "checkbox.kitchen",
-                    "state": "on",
-                    "attributes": {
-                        "friendly_name": "Kitchen Checkbox"
-                    }
-                },
-                {
-                    "entity_id": "date.living_room",
-                    "state": "2023-06-13",
-                    "attributes": {
-                        "friendly_name": "Living Room Date"
-                    }
-                },
-                {
-                    "entity_id": "text_input.bedroom",
-                    "state": "Hello, World!",
-                    "attributes": {
-                        "friendly_name": "Bedroom Text Input"
-                    }
-                },
-                {
-                    "entity_id": "button.trigger_automation",
-                    "state": "off",
-                    "attributes": {
-                        "friendly_name": "Trigger Automation"
-                    }
+        [
+            {
+                "entity_id": "light.living_room",
+                "state": "on",
+                "attributes": {
+                    "friendly_name": "Living Room Light",
+                    "brightness": 180,
+                    "color_temp": 350
                 }
-            ]
+            },
+            {
+                "entity_id": "climate.bedroom",
+                "state": "cool",
+                "attributes": {
+                    "friendly_name": "Bedroom Climate",
+                    "temperature": 22.5,
+                    "current_mode": "cool",
+                    "available_modes": ["cool", "heat", "auto"]
+                }
+            },
+            {
+                "entity_id": "brightness.living_room",
+                "state": "50",
+                "attributes": {
+                    "friendly_name": "Living Room Brightness",
+                    "brightness": 50
+                }
+            },
+            {
+                "entity_id": "color.living_room",
+                "state": "red",
+                "attributes": {
+                    "friendly_name": "Living Room Color",
+                    "color": "red"
+                }
+            },
+            {
+                "entity_id": "checkbox.kitchen",
+                "state": "on",
+                "attributes": {
+                    "friendly_name": "Kitchen Checkbox"
+                }
+            },
+            {
+                "entity_id": "date.living_room",
+                "state": "2023-06-13",
+                "attributes": {
+                    "friendly_name": "Living Room Date"
+                }
+            },
+            {
+                "entity_id": "text_input.bedroom",
+                "state": "Hello, World!",
+                "attributes": {
+                    "friendly_name": "Bedroom Text Input"
+                }
+            },
+            {
+                "entity_id": "button.trigger_automation",
+                "state": "off",
+                "attributes": {
+                    "friendly_name": "Trigger Automation"
+                }
+            },
+            {
+                "entity_id": "light.kitchen",
+                "state": "off",
+                "attributes": {
+                    "friendly_name": "Kitchen Light",
+                    "brightness": 120,
+                    "color_temp": 300
+                }
+            },
+            {
+                "entity_id": "climate.living_room",
+                "state": "heat",
+                "attributes": {
+                    "friendly_name": "Living Room Climate",
+                    "temperature": 25.0,
+                    "current_mode": "heat",
+                    "available_modes": ["cool", "heat", "auto"]
+                }
+            },
+            {
+                "entity_id": "brightness.bedroom",
+                "state": "75",
+                "attributes": {
+                    "friendly_name": "Bedroom Brightness",
+                    "brightness": 75
+                }
+            },
+            {
+                "entity_id": "color.bedroom",
+                "state": "blue",
+                "attributes": {
+                    "friendly_name": "Bedroom Color",
+                    "color": "blue"
+                }
+            }
+        ]
         """.trimIndent()
 
         // Parse the JSON response and create entities
-        entities.addAll(parseEntitiesFromApiResponse(apiResponse))
+        val allEntities = parseEntitiesFromApiResponse(apiResponse)
 
         // Group entities by their group name and create GroupedEntity objects
-        val groupedEntities = entities.groupBy { it.groupName }.map { GroupedEntity(it.key, it.value) }
+        val groupedEntities = allEntities.groupBy { it.groupName }.map { GroupedEntity(it.key, it.value) }
 
-        // Update the RecyclerView with the grouped entities
-        recyclerView.adapter = EntityAdapter(groupedEntities)
+        // Create a new list of RecyclerViewItems
+        val recyclerViewItems = mutableListOf<RecyclerViewItem>()
+
+        // Add group titles and their corresponding components to the list
+        for (groupedEntity in groupedEntities) {
+            recyclerViewItems.add(GroupTitle(groupedEntity.groupName))
+            for (entity in groupedEntity.entities) {
+                recyclerViewItems.add(Component(entity))
+            }
+        }
+
+        // Set the RecyclerView adapter with the new list
+        recyclerView.adapter = EntityAdapter(recyclerViewItems)
 
         backButton.setOnClickListener {
             finish()
@@ -142,11 +188,11 @@ class HomescreenSettingsActivity : AppCompatActivity() {
 
             val entityId = jsonObject.getString("entity_id")
             val type = entityId.split('.')[0]  // Use the first part of entity_id as type
-            val groupName = entityId.split(".")[1].replace("_", " ").split(" ").joinToString(" ") { word ->
-                    word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-                }
             val state = jsonObject.getString("state")
             val attributes = jsonObject.optJSONObject("attributes")
+            val groupName = entityId.split(".")[1].replace("_", " ").split(" ").joinToString(" ") { word ->
+                word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+            }
 
             val friendlyName = attributes?.getString("friendly_name") ?: ""
             val brightness = attributes?.optInt("brightness") ?: 0
