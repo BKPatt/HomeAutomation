@@ -1,7 +1,6 @@
 package com.example.homeautomation.settings
 
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
@@ -143,7 +142,6 @@ class HomescreenSettingsActivity : AppCompatActivity() {
             val updatedEntities = entities.map { entity ->
                 entity.copy(clickable = true, enabled = false)
             }
-            Log.d("Test: ", updatedEntities.toString())
             updateEntities(updatedEntities)
         }
 

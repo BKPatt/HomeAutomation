@@ -25,7 +25,7 @@ import com.skydoves.colorpickerview.ColorPickerDialog
 import com.skydoves.colorpickerview.listeners.ColorEnvelopeListener
 import java.util.Calendar
 
-class EntityAdapter(private var items: MutableList<RecyclerViewItem>) :
+class EntityAdapter(private var items: List<RecyclerViewItem>) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -86,12 +86,6 @@ class EntityAdapter(private var items: MutableList<RecyclerViewItem>) :
             ITEM_TYPE_GROUP_TITLE -> "Group Title"
             else -> throw IllegalArgumentException("Invalid view type")
         }
-    }
-
-    fun updateItems(newItems: List<RecyclerViewItem>) {
-        items.clear()
-        items.addAll(newItems)
-        notifyDataSetChanged()
     }
 
     private fun showEditableDialog(context: Context, viewType: Int, entity: HomeAssistantEntity) {
