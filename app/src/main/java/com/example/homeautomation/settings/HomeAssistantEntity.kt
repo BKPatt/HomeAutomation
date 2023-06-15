@@ -10,6 +10,7 @@ data class HomeAssistantEntity(
     val currentMode: String,
     val availableModes: List<String>,
     val type: String,
+    val groupName: String,
     val clickable: Boolean,
     val enabled: Boolean
 )

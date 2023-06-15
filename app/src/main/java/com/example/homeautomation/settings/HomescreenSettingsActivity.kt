@@ -98,8 +98,11 @@ class HomescreenSettingsActivity : AppCompatActivity() {
         // Parse the JSON response and create entities
         entities.addAll(parseEntitiesFromApiResponse(apiResponse))
 
-        // Update the RecyclerView with the entities
-        recyclerView.adapter = EntityAdapter(entities)
+        // Group entities by their group name and create GroupedEntity objects
+        val groupedEntities = entities.groupBy { it.groupName }.map { GroupedEntity(it.key, it.value) }
+
+        // Update the RecyclerView with the grouped entities
+        recyclerView.adapter = EntityAdapter(groupedEntities)
 
         backButton.setOnClickListener {
             finish()
@@ -139,6 +142,9 @@ class HomescreenSettingsActivity : AppCompatActivity() {
 
             val entityId = jsonObject.getString("entity_id")
             val type = entityId.split('.')[0]  // Use the first part of entity_id as type
+            val groupName = entityId.split(".")[1].replace("_", " ").split(" ").joinToString(" ") { word ->
+                    word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+                }
             val state = jsonObject.getString("state")
             val attributes = jsonObject.optJSONObject("attributes")
 
@@ -159,6 +165,7 @@ class HomescreenSettingsActivity : AppCompatActivity() {
                 currentMode,
                 availableModes ?: listOf(),
                 type,
+                groupName,
                 clickable = false,
                 enabled = true
             )
@@ -168,8 +175,6 @@ class HomescreenSettingsActivity : AppCompatActivity() {
 
         return entities
     }
-
-
 
     private fun jsonArrayToList(jsonArray: JSONArray): List<String> {
         val list = mutableListOf<String>()
