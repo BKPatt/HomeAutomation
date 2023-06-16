@@ -1,10 +1,14 @@
 package com.example.homeautomation.dropDown
 
 import android.content.Context
+import android.content.Intent
 import android.view.Gravity
 import android.view.View
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
+import com.example.homeautomation.PreferenceManager
 import com.example.homeautomation.R
+import com.example.homeautomation.login.HomeAutomationLoginActivity
 
 class PopupMenuHelper(private val context: Context) {
     fun showPopupMenu(view: View) {
@@ -17,7 +21,7 @@ class PopupMenuHelper(private val context: Context) {
     private fun handleMenuItemClick(itemId: Int): Boolean {
         return when (itemId) {
             R.id.yourProfile -> {
-                // TODO: Add profile information such as home assistant url, email, phone number, etc
+                // TODO: Add profile information such as home assistant URL, email, phone number, etc
                 true
             }
             R.id.help -> {
@@ -25,10 +29,23 @@ class PopupMenuHelper(private val context: Context) {
                 true
             }
             R.id.logout -> {
-                // TODO: Log out user and bring to login screen
+                logoutUser()
                 true
             }
             else -> false
+        }
+    }
+
+    private fun logoutUser() {
+        val preferenceManager = PreferenceManager(context)
+        preferenceManager.setLoggedIn(false)
+
+        val intent = Intent(context, HomeAutomationLoginActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+
+        if (context is AppCompatActivity) {
+            context.finish()
         }
     }
 }
