@@ -9,6 +9,7 @@ import androidx.appcompat.widget.PopupMenu
 import com.example.homeautomation.PreferenceManager
 import com.example.homeautomation.R
 import com.example.homeautomation.login.HomeAutomationLoginActivity
+import com.example.homeautomation.profile.ProfileActivity
 
 class PopupMenuHelper(private val context: Context) {
     fun showPopupMenu(view: View) {
@@ -21,7 +22,7 @@ class PopupMenuHelper(private val context: Context) {
     private fun handleMenuItemClick(itemId: Int): Boolean {
         return when (itemId) {
             R.id.yourProfile -> {
-                // TODO: Add profile information such as home assistant URL, email, phone number, etc
+                openUserInfo()
                 true
             }
             R.id.help -> {
@@ -34,6 +35,11 @@ class PopupMenuHelper(private val context: Context) {
             }
             else -> false
         }
+    }
+
+    private fun openUserInfo() {
+        val intent = Intent(context, ProfileActivity::class.java) // Replace ProfileActivity with your user profile activity
+        context.startActivity(intent)
     }
 
     private fun logoutUser() {

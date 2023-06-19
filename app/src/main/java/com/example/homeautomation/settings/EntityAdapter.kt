@@ -3,22 +3,29 @@ package com.example.homeautomation.settings
 import android.app.DatePickerDialog
 import android.content.Context
 import android.content.DialogInterface
+import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.BlendMode
+import android.graphics.BlendModeColorFilter
+import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
+import android.widget.CompoundButton
 import android.widget.EditText
 import android.widget.SeekBar
 import android.widget.Spinner
 import android.widget.Switch
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.homeautomation.R
 import com.skydoves.colorpickerview.ColorPickerDialog
@@ -54,12 +61,32 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
             for (id in ids) {
                 itemView.findViewById<View>(id)?.let { views[id] = it }
             }
+
+            itemView.setOnKeyListener { _, keyCode, event ->
+                if (keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_UP) {
+                    applyBackgroundColor(selectedColor ?: 0)
+                    true
+                } else {
+                    false
+                }
+            }
+        }
+
+        fun applyBackgroundColor(color: Int) {
+            views[R.id.colorPickerButton]?.let { view ->
+                (view as? Button)?.apply {
+                    val drawable = ContextCompat.getDrawable(context, R.drawable.rounded_button)
+                    background = drawable
+                    drawable?.colorFilter = BlendModeColorFilter(color, BlendMode.SRC_IN)                }
+            }
         }
     }
 
     inner class GroupTitleViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val titleTextView: TextView = itemView.findViewById(R.id.titleTextView)
     }
+
+    private var selectedColor: Int? = null
 
     private fun createGeneralViewHolder(parent: ViewGroup, layoutId: Int): GeneralViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -121,6 +148,32 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
         return BitmapDrawable(context.resources, bitmapScaled)
     }
 
+    private fun updateButtonColors(button: CompoundButton, isChecked: Boolean, isEnabled: Boolean) {
+        button.apply {
+            this.isChecked = isChecked
+            this.isEnabled = isEnabled
+            if (!isEnabled) {
+                val color = Color.GRAY
+                when (this) {
+                    is CheckBox -> buttonTintList = ColorStateList.valueOf(color)
+                    is Switch -> {
+                        thumbTintList = ColorStateList.valueOf(color)
+                        trackTintList = ColorStateList.valueOf(color)
+                    }
+                }
+            } else {
+                val colorStateList = ContextCompat.getColorStateList(context, R.color.state)
+                when (this) {
+                    is CheckBox -> buttonTintList = colorStateList
+                    is Switch -> {
+                        thumbTintList = colorStateList
+                        trackTintList = colorStateList
+                    }
+                }
+            }
+        }
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
             ITEM_TYPE_SWITCH -> createGeneralViewHolder(parent, R.layout.switch_item)
@@ -137,9 +190,7 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        val item = items[position]
-
-        when (item) {
+        when (val item = items[position]) {
             is GroupTitle -> {
                 val groupTitleViewHolder = holder as GroupTitleViewHolder
                 groupTitleViewHolder.titleTextView.text = item.title
@@ -173,6 +224,7 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
                             (view as? Switch)?.apply {
                                 isChecked = entity.state == "on"
                                 isEnabled = entity.enabled
+                                updateButtonColors(view, isChecked, isEnabled)
                             }
                         }
                     }
@@ -206,16 +258,17 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
                                         .setPositiveButton(
                                             "Confirm",
                                             ColorEnvelopeListener { envelope, fromUser ->
-                                                // TODO: something with envelope.color here
+                                                selectedColor = envelope.color
+                                                generalHolder.applyBackgroundColor(selectedColor ?: 0)
                                             })
                                         .setNegativeButton(
                                             "Cancel",
                                             DialogInterface.OnClickListener { dialogInterface, _ ->
                                                 dialogInterface.dismiss()
                                             })
-                                        .attachAlphaSlideBar(true) // default value is true
-                                        .attachBrightnessSlideBar(true) // default value is true
-                                        .setBottomSpace(12) // set bottom space between last slidebar and buttons
+                                        .attachAlphaSlideBar(true)
+                                        .attachBrightnessSlideBar(true)
+                                        .setBottomSpace(12)
                                         .show()
                                 }
                                 isEnabled = entity.enabled
@@ -227,6 +280,7 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
                             (view as? CheckBox)?.apply {
                                 isChecked = entity.state == "on"
                                 isEnabled = entity.enabled
+                                updateButtonColors(view, isChecked, isEnabled)
                             }
                         }
                     }
@@ -300,4 +354,3 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
         }
     }
 }
-

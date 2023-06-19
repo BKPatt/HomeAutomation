@@ -13,7 +13,7 @@
         android:background="@drawable/hover_effect" />
     <item
         android:id="@+id/logout"
-        android:title="Sign Out"
+        android:title="@string/logout"
         android:background="@drawable/hover_effect" />
 
 </menu>
