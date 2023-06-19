@@ -1,6 +1,7 @@
 package com.example.homeautomation.login
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
@@ -10,52 +11,99 @@ import com.example.homeautomation.signup.HomeAutomationSignupActivity
 import com.example.homeautomation.MainActivity
 import com.example.homeautomation.PreferenceManager
 import com.example.homeautomation.R
+import okhttp3.*
+// import java.io.IOException
 
 class HomeAutomationLoginActivity : AppCompatActivity() {
 
-    private lateinit var usernameEditText: EditText
-    private lateinit var passwordEditText: EditText
+    private lateinit var endpointEditText: EditText
     private lateinit var loginButton: Button
-    private lateinit var signupButton: Button
+    private lateinit var sharedPreferences: SharedPreferences
+    // private val client = OkHttpClient()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.login)
 
         // Initialize views
-        usernameEditText = findViewById(R.id.username)
-        passwordEditText = findViewById(R.id.password)
+        endpointEditText = findViewById(R.id.endpoint)
         loginButton = findViewById(R.id.login)
-        signupButton = findViewById(R.id.signup)
+
+        // Initialize SharedPreferences
+        sharedPreferences = getSharedPreferences("MyPrefs", MODE_PRIVATE)
+
+        // Restore the endpoint value if it was previously stored
+        val savedEndpoint = sharedPreferences.getString("endpoint", "")
+        endpointEditText.setText(savedEndpoint)
 
         // Set click listener for login button
         loginButton.setOnClickListener {
-            val username = usernameEditText.text.toString()
-            val password = passwordEditText.text.toString()
+            val endpoint = endpointEditText.text.toString()
 
-            if (validateCredentials(username, password)) {
+            if (validateCredentials(endpoint)) {
+                // Save the endpoint to SharedPreferences
+                val editor = sharedPreferences.edit()
+                editor.putString("endpoint", endpoint)
+                editor.apply()
+
+                // Save the endpoint to PreferenceManager
                 val preferenceManager = PreferenceManager(this)
+                preferenceManager.setEndpoint(endpoint)
                 preferenceManager.setLoggedIn(true)
 
                 val intent = Intent(this, MainActivity::class.java)
                 startActivity(intent)
                 finish()
             } else {
-                Toast.makeText(this, "Invalid credentials", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Invalid endpoint", Toast.LENGTH_SHORT).show()
             }
         }
 
-
-        // Set click listener for signup button
-        signupButton.setOnClickListener {
-            // Navigate to the SignupActivity
-            val intent = Intent(this, HomeAutomationSignupActivity::class.java)
-            startActivity(intent)
-        }
     }
 
-    private fun validateCredentials(username: String, password: String): Boolean {
+    private fun validateCredentials(endpoint: String): Boolean {
         // Placeholder validation logic, replace with your actual implementation
-        return username == "example@example.com" && password == "password"
+        return endpoint == "http://example.com"
+
+        // TODO: Uncomment this when I have access to an API
+//        val request = Request.Builder()
+//            .url("$endpoint/api/")
+//            .build()
+//
+//        client.newCall(request).enqueue(object : Callback {
+//            override fun onResponse(call: Call, response: Response) {
+//                if (response.isSuccessful) {
+//                    // Save the endpoint to SharedPreferences
+//                    val editor = sharedPreferences.edit()
+//                    editor.putString("endpoint", endpoint)
+//                    editor.apply()
+//
+//                    val preferenceManager = PreferenceManager(this@HomeAutomationLoginActivity)
+//                    preferenceManager.setLoggedIn(true)
+//
+//                    val intent = Intent(this@HomeAutomationLoginActivity, MainActivity::class.java)
+//                    startActivity(intent)
+//                    finish()
+//                } else {
+//                    runOnUiThread {
+//                        Toast.makeText(
+//                            this@HomeAutomationLoginActivity,
+//                            "Invalid endpoint",
+//                            Toast.LENGTH_SHORT
+//                        ).show()
+//                    }
+//                }
+//            }
+//
+//            override fun onFailure(call: Call, e: IOException) {
+//                runOnUiThread {
+//                    Toast.makeText(
+//                        this@HomeAutomationLoginActivity,
+//                        "Failed to connect to the endpoint",
+//                        Toast.LENGTH_SHORT
+//                    ).show()
+//                }
+//            }
+//        })
     }
 }

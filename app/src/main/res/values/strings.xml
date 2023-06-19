@@ -1,11 +1,10 @@
 <resources>
     <string name="app_name">Home Automation</string>
-    <string name="username_hint">Username</string>
-    <string name="password_hint">Password</string>
-    <string name="login">Login</string>
+    <string name="endpoint_hint">Endpoint</string>
+    <string name="login">Connect</string>
     <string name="signup">Sign Up</string>
     <string name="back">Back</string>
-    <string name="logout">Logout</string>
+    <string name="logout">Disconnect</string>
     <string name="profile">Profile</string>
     <string name="options">Options</string>
     <string name="username">Username</string>

@@ -6,22 +6,30 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:scrollbars="vertical"
+    android:background="#00CDFE"
     tools:context=".settings.HomeAssistantSettings">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/inputRecyclerView"
+    <RelativeLayout
+        android:id="@+id/recyclerContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/buttonsContainer" />
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_above="@id/buttonsContainer">
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/inputRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </RelativeLayout>
 
     <LinearLayout
         android:id="@+id/buttonsContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:gravity="center"
         android:padding="8dp"
-        android:background="@drawable/border"
+        android:background="@drawable/toolbar_background"
         android:layout_alignParentBottom="true">
 
         <Button
@@ -30,8 +38,10 @@
             android:layout_height="wrap_content"
             android:text="@string/edit"
             android:textColor="#000000"
+            android:padding="8dp"
+            android:layout_marginRight="8dp"
             android:layout_gravity="center"
-            android:layout_marginBottom="16dp"
+            android:background="@drawable/rounded_button"
             android:visibility="visible" />
 
         <Button
@@ -40,7 +50,10 @@
             android:layout_height="wrap_content"
             android:text="@string/close"
             android:textColor="#000000"
+            android:padding="8dp"
+            android:layout_marginLeft="8dp"
             android:layout_gravity="center"
+            android:background="@drawable/rounded_button"
             android:visibility="visible" />
 
         <Button
@@ -49,7 +62,9 @@
             android:layout_height="wrap_content"
             android:text="@string/back"
             android:textColor="#000000"
+            android:padding="8dp"
             android:layout_gravity="center"
+            android:background="@drawable/rounded_button"
             android:visibility="gone" />
 
     </LinearLayout>

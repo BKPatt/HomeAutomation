@@ -2,12 +2,13 @@
 <androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#00CDFE">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#FFFFFF">
+        android:background="#00CDFE">
 
         <include
             layout="@layout/toolbar"
@@ -35,6 +36,7 @@
                 android:id="@+id/settings"
                 android:layout_width="200dp"
                 android:layout_height="wrap_content"
+                android:background="@drawable/rounded_button"
                 android:text="Settings" />
 
             <!--TODO: Add ability to add settings together to show under settings-->
