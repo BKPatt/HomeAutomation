@@ -2,7 +2,6 @@ package com.example.homeautomation
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.Button
 import android.widget.ImageButton
@@ -40,7 +39,6 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        Log.d("Name: ", firstName.toString())
         if (firstName.isNullOrEmpty()) {
             val intent = Intent(this, HomeAutomationSignupActivity::class.java)
             startActivity(intent)
