@@ -19,7 +19,7 @@
             android:name=".signup.HomeAutomationSignupActivity"
             android:exported="false" />
         <activity
-            android:name=".settings.HomescreenSettingsActivity"
+            android:name=".settings.HomeScreenSettingsActivity"
             android:exported="false" />
         <activity
             android:name=".profile.ProfileActivity"

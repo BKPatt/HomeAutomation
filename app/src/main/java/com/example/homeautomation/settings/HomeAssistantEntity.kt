@@ -1,19 +1,26 @@
 package com.example.homeautomation.settings
 
+import com.example.homeautomation.PreferenceManager
+
 data class HomeAssistantEntity(
     val entityId: String,
-    val state: String,
+    var state: String,
     val friendlyName: String,
-    val brightness: Int,
-    val colorTemp: Int,
-    val temperature: Double,
-    val currentMode: String,
-    val availableModes: List<String>,
+    var brightness: Int,
+    var colorTemp: Int,
+    var temperature: Double?,
+    var currentMode: String,
+    var availableModes: List<String>,
     val type: String,
     val groupName: String,
-    val clickable: Boolean,
-    val enabled: Boolean
-)
+    var clickable: Boolean,
+    var enabled: Boolean,
+    var attributes: Map<String, Any>? = null // Make attributes nullable
+) {
+    fun notifyEntityChanged(preferenceManager: PreferenceManager) {
+        preferenceManager.updateEntity(this)
+    }
+}
 
 sealed class RecyclerViewItem
 

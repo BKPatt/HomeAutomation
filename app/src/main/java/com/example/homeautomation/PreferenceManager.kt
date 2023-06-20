@@ -2,10 +2,14 @@ package com.example.homeautomation
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.example.homeautomation.settings.HomeAssistantEntity
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 class PreferenceManager(context: Context) {
     private val sharedPreferences: SharedPreferences =
         context.getSharedPreferences("MyAppPreferences", Context.MODE_PRIVATE)
+    private val gson = Gson()
 
     fun isLoggedIn(): Boolean {
         return sharedPreferences.getBoolean("isLoggedIn", false)
@@ -33,5 +37,22 @@ class PreferenceManager(context: Context) {
     }
     fun getLastName(): String? {
         return sharedPreferences.getString("LastName", null)
+    }
+
+    fun saveEntities(key: String, entities: List<HomeAssistantEntity>) {
+        val json = gson.toJson(entities)
+        sharedPreferences.edit().putString(key, json).apply()
+    }
+    fun updateEntity(entity: HomeAssistantEntity) {
+        val entities = getEntities("entities")
+        val updatedEntities = entities.map {
+            if (it.entityId == entity.entityId) entity else it
+        }
+        saveEntities("entities", updatedEntities)
+    }
+    fun getEntities(key: String): List<HomeAssistantEntity> {
+        val json = sharedPreferences.getString(key, null)
+        val type = object : TypeToken<List<HomeAssistantEntity>>() {}.type
+        return gson.fromJson(json, type) ?: emptyList()
     }
 }
