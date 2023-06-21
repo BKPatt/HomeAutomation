@@ -23,22 +23,12 @@ class AddPopup(context: Context) : View.OnClickListener {
     private val popupWindow: PopupWindow
 
     private val entityIdSpinner: Spinner = popupView.findViewById(R.id.spinnerEntityType)
-    private val enableStateButton: Button = popupView.findViewById(R.id.enableState)
-    private val stateEditText: EditText = popupView.findViewById(R.id.editTextState)
-
     private val entityTypes = arrayOf("light", "climate", "brightness", "color", "checkbox", "date", "text_input", "button")
 
     init {
         val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, entityTypes)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         entityIdSpinner.adapter = adapter
-
-        stateEditText.isEnabled = false
-
-        enableStateButton.setOnClickListener {
-            stateEditText.isEnabled = true
-            enableStateButton.visibility = View.GONE
-        }
 
         popupWindow = PopupWindow(
             popupView,

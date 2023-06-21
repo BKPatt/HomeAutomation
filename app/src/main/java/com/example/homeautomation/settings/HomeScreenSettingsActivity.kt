@@ -16,7 +16,8 @@ import com.example.homeautomation.PreferenceManager
 import com.example.homeautomation.R
 import org.json.JSONArray
 
-class HomeScreenSettingsActivity : AppCompatActivity(), AddPopupListener {
+class HomeScreenSettingsActivity : AppCompatActivity(), AddPopupListener,
+    EntityAdapter.EditListener {
     private lateinit var recyclerView: RecyclerView
     private lateinit var backButton: Button
     private lateinit var editButton: Button
@@ -77,28 +78,31 @@ class HomeScreenSettingsActivity : AppCompatActivity(), AddPopupListener {
         createEntities()
         preferenceManager = PreferenceManager(this)
         updatedItems = createRecyclerViewItems(entities)
-        recyclerViewAdapter = createAdapter(updatedItems, preferenceManager, entities)
+        recyclerViewAdapter = createAdapter(updatedItems, preferenceManager, entities, this)
         recyclerView.adapter = recyclerViewAdapter
     }
 
     override fun onSaveClicked(entityId: String, state: String, friendlyName: String, attributes: Map<String, Any>) {
-        val entity = HomeAssistantEntity(
+        val parts = entityId.split(".")
+        val groupName = if (parts.size > 1) parts[1] else ""
+
+        val newEntity = HomeAssistantEntity(
             entityId = entityId,
             state = state,
             friendlyName = friendlyName,
-            brightness = attributes["brightness"] as? Int ?: 0,
-            colorTemp = attributes["color_temp"] as? Int ?: 0,
-            temperature = attributes["temperature"] as? Double,
-            currentMode = attributes["current_mode"] as? String ?: "",
-            availableModes = attributes["available_modes"] as? List<String> ?: emptyList(),
+            brightness = 0,
+            colorTemp = 0,
+            temperature = null,
+            currentMode = "",
+            availableModes = emptyList(),
             type = entityId.split('.')[0],
-            groupName = entityId.split('.')[1],
+            groupName = groupName,
             clickable = false,
             enabled = true,
-            attributes = attributes
+            attributes = emptyMap()
         )
 
-        entities.add(entity)
+        entities.add(newEntity)
         preferenceManager.saveEntities("entities", entities)
 
         val updatedItems = createRecyclerViewItems(entities)
@@ -125,7 +129,7 @@ class HomeScreenSettingsActivity : AppCompatActivity(), AddPopupListener {
         val friendlyNameEditText = dialogView.findViewById<EditText>(R.id.editTextFriendlyName)
         val stateEditText = dialogView.findViewById<EditText>(R.id.editTextState)
         val entityIdEditText = dialogView.findViewById<EditText>(R.id.editTextEntityId)
-        val enableStateButton = dialogView.findViewById<Button>(R.id.enableState)
+        val enableStateButton = dialogView.findViewById<Button>(R.id.enableEdit)
 
         val entityTypes = arrayOf(
             "light", "climate", "brightness", "color",
@@ -147,27 +151,7 @@ class HomeScreenSettingsActivity : AppCompatActivity(), AddPopupListener {
                 val entityIdInput = "$entityTypeInput.${entityIdEditText.text}"
 
                 if (friendlyNameInput.isNotEmpty() && stateInput.isNotEmpty() && entityIdInput.isNotEmpty()) {
-                    val newEntity = HomeAssistantEntity(
-                        entityId = entityIdInput,
-                        state = stateInput,
-                        friendlyName = friendlyNameInput,
-                        brightness = 0,
-                        colorTemp = 0,
-                        temperature = null,
-                        currentMode = "",
-                        availableModes = emptyList(),
-                        type = entityTypeInput,
-                        groupName = "",
-                        clickable = false,
-                        enabled = true,
-                        attributes = emptyMap()
-                    )
-
-                    entities.add(newEntity)
-                    preferenceManager.saveEntities("entities", entities)
-
-                    val updatedItems = createRecyclerViewItems(entities)
-                    recyclerViewAdapter.updateItems(updatedItems)
+                    onSaveClicked(entityIdInput, stateInput, friendlyNameInput, emptyMap())
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -205,8 +189,8 @@ class HomeScreenSettingsActivity : AppCompatActivity(), AddPopupListener {
         }
     }
 
-    private fun createAdapter(entities: List<RecyclerViewItem>, preferenceManager: PreferenceManager, entitiesList: MutableList<HomeAssistantEntity>): EntityAdapter {
-        return EntityAdapter(this, entities, preferenceManager, entitiesList)
+    private fun createAdapter(entities: List<RecyclerViewItem>, preferenceManager: PreferenceManager, entitiesList: MutableList<HomeAssistantEntity>, editListener: EntityAdapter.EditListener): EntityAdapter {
+        return EntityAdapter(this, entities, preferenceManager, entitiesList, editListener)
     }
 
     private fun updateEntities(updatedEntities: List<HomeAssistantEntity>) {
@@ -301,4 +285,12 @@ class HomeScreenSettingsActivity : AppCompatActivity(), AddPopupListener {
         }
         return list
     }
+
+    override fun onEntityEdited(entity: HomeAssistantEntity, position: Int) {
+        val updatedEntities = entities.toMutableList()
+        updatedEntities[position] = entity
+        preferenceManager.saveEntities("entities", updatedEntities)
+        updateEntities(updatedEntities)
+    }
 }
+

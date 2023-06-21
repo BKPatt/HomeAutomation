@@ -1,5 +1,6 @@
 package com.example.homeautomation.settings
 
+import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.content.Context
 import android.content.DialogInterface
@@ -15,7 +16,6 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.*
 import android.widget.*
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.homeautomation.PreferenceManager
@@ -24,13 +24,14 @@ import com.skydoves.colorpickerview.ColorPickerDialog
 import com.skydoves.colorpickerview.listeners.ColorEnvelopeListener
 import org.json.JSONException
 import org.json.JSONObject
-import java.util.Calendar
+import java.util.*
 
 class EntityAdapter(
     private val context: Context,
     private var items: List<RecyclerViewItem>,
     private val preferenceManager: PreferenceManager,
-    private var entities: MutableList<HomeAssistantEntity>
+    private var entities: MutableList<HomeAssistantEntity>,
+    var editListener: EditListener
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private var selectedColor: Int? = null
 
@@ -44,6 +45,10 @@ class EntityAdapter(
         private const val ITEM_TYPE_TEXT_INPUT = 7
         private const val ITEM_TYPE_BUTTON = 8
         private const val ITEM_TYPE_GROUP_TITLE = 9
+    }
+
+    interface EditListener {
+        fun onEntityEdited(entity: HomeAssistantEntity, position: Int)
     }
 
     inner class GeneralViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -98,21 +103,6 @@ class EntityAdapter(
         return GroupTitleViewHolder(view)
     }
 
-    private fun viewTypeToString(viewType: Int): String {
-        return when (viewType) {
-            ITEM_TYPE_SWITCH -> "Switch"
-            ITEM_TYPE_DROPDOWN -> "Dropdown"
-            ITEM_TYPE_SCROLLABLE_BAR -> "Scrollable Bar"
-            ITEM_TYPE_COLOR_PICKER -> "Color Picker"
-            ITEM_TYPE_CHECKBOX -> "Checkbox"
-            ITEM_TYPE_DATE_PICKER -> "Date Picker"
-            ITEM_TYPE_TEXT_INPUT -> "Text Input"
-            ITEM_TYPE_BUTTON -> "Button"
-            ITEM_TYPE_GROUP_TITLE -> "Group Title"
-            else -> throw IllegalArgumentException("Invalid view type")
-        }
-    }
-
     fun updateItems(items: List<RecyclerViewItem>) {
         this.items = items
         notifyDataSetChanged()
@@ -122,19 +112,18 @@ class EntityAdapter(
         context: Context,
         viewType: Int,
         entity: HomeAssistantEntity,
-        adapter: EntityAdapter,
         adapterPosition: Int
     ) {
         val dialogView = LayoutInflater.from(context).inflate(R.layout.popup_add, null)
         val friendlyNameEditText = dialogView.findViewById<EditText>(R.id.editTextFriendlyName)
-        val stateEditText = dialogView.findViewById<EditText>(R.id.editTextState)
         val entityIdEditText = dialogView.findViewById<EditText>(R.id.editTextEntityId)
-        val enableStateButton = dialogView.findViewById<Button>(R.id.enableState)
+        val stateText = dialogView.findViewById<EditText>(R.id.editTextState)
+        val enableStateButton = dialogView.findViewById<Button>(R.id.enableEdit)
 
         // Set initial values from the entity object
         friendlyNameEditText.setText(entity.friendlyName)
-        stateEditText.setText(entity.state)
-        entityIdEditText.setText(entity.entityId)
+        entityIdEditText.setText(entity.entityId.toString().substringAfterLast("."))
+        stateText.setText(entity.state)
 
         val entityTypes = arrayOf(
             "light", "climate", "brightness", "color",
@@ -160,34 +149,42 @@ class EntityAdapter(
             .setView(dialogView)
             .setPositiveButton("Save") { _, _ ->
                 val friendlyNameInput = friendlyNameEditText.text.toString()
-                val stateInput = stateEditText.text.toString()
                 val entityTypeInput = entityTypeSpinner.selectedItem.toString()
-                val entityIdInput = entityIdEditText.text.toString()
+                val entityId = entity.entityId
+                val stateInput = stateText.text.toString()
                 val attributesInput = parseAttributes(attributesEditText.text.toString())
 
-                if (friendlyNameInput.isNotEmpty() && stateInput.isNotEmpty() && entityIdInput.isNotEmpty() && attributesInput != null) {
+                if (friendlyNameInput.isNotEmpty() && entityId.isNotEmpty() && attributesInput != null) {
                     val updatedEntity = entity.copy(
-                        entityId = entityIdInput,
+                        entityId = entityId,
                         friendlyName = friendlyNameInput,
-                        state = stateInput,
                         type = entityTypeInput,
+                        state = stateInput,
                         attributes = attributesInput
                     )
 
-                    adapter.updateEntity(updatedEntity, adapterPosition)
-                    preferenceManager.saveEntities("entities", adapter.entities)
+                    val entityIndex = findEntityIndex(entity.entityId)
+                    if (entityIndex != -1) { // if entity was found
+                        updateEntity(updatedEntity, entityIndex)
+                        preferenceManager.saveEntities("entities", entities)
+
+                        // Invoke the editListener to notify the changes to the adapter immediately
+                        editListener.onEntityEdited(updatedEntity, entityIndex)
+                    } else {
+                        // handle case where the entity was not found in the entities list
+                    }
                 }
             }
             .setNegativeButton("Cancel", null)
             .create()
 
         enableStateButton.setOnClickListener {
-            stateEditText.isEnabled = true
+            stateText.isEnabled = true
             enableStateButton.visibility = View.GONE
         }
 
         alertDialog.setOnDismissListener {
-            stateEditText.isEnabled = false
+            stateText.isEnabled = false
             enableStateButton.visibility = View.VISIBLE
         }
 
@@ -202,6 +199,10 @@ class EntityAdapter(
     private fun parseAttributesToJson(attributes: Map<String, Any>): String {
         val attributesJson = JSONObject(attributes)
         return attributesJson.toString()
+    }
+
+    private fun findEntityIndex(entityId: String): Int {
+        return entities.indexOfFirst { it.entityId == entityId }
     }
 
     private fun parseAttributes(attributesString: String): Map<String, Any>? {
@@ -274,7 +275,12 @@ class EntityAdapter(
         when (val item = items[position]) {
             is GroupTitle -> {
                 val groupTitleViewHolder = holder as GroupTitleViewHolder
-                groupTitleViewHolder.titleTextView.text = item.title
+                if (item.title != null) {
+                    groupTitleViewHolder.titleTextView.text = item.title
+                    groupTitleViewHolder.titleTextView.visibility = View.VISIBLE
+                } else {
+                    groupTitleViewHolder.titleTextView.visibility = View.GONE
+                }
             }
             is Component -> {
                 val entity = item.entity
@@ -290,7 +296,7 @@ class EntityAdapter(
                             setCompoundDrawablesWithIntrinsicBounds(null, null, editDrawable, null)
                             compoundDrawablePadding = 10
                             setOnClickListener {
-                                showEditableDialog(context, viewType, entity, this@EntityAdapter, holder.bindingAdapterPosition)
+                                showEditableDialog(context, viewType, entity, holder.bindingAdapterPosition)
                             }
                         } else {
                             setOnClickListener(null)
@@ -309,6 +315,7 @@ class EntityAdapter(
                                 setOnCheckedChangeListener { _, isChecked ->
                                     entity.state = if (isChecked) "on" else "off"
                                     entity.notifyEntityChanged(preferenceManager)
+                                    notifyItemChanged(holder.bindingAdapterPosition)
                                 }
                             }
                         }
@@ -364,6 +371,13 @@ class EntityAdapter(
                     ITEM_TYPE_COLOR_PICKER -> {
                         generalHolder.views[R.id.colorPickerButton]?.let { view ->
                             (view as? Button)?.apply {
+                                // Set the initial color to white (RGB: 255, 255, 255)
+                                val initialColor = Color.rgb(255, 255, 255)
+                                selectedColor = initialColor
+                                entity.colorTemp = initialColor
+                                entity.notifyEntityChanged(preferenceManager)
+                                generalHolder.applyBackgroundColor(initialColor)
+
                                 setOnClickListener {
                                     ColorPickerDialog.Builder(view.context)
                                         .setTitle("ColorPicker Dialog")
@@ -386,8 +400,6 @@ class EntityAdapter(
                                         .setBottomSpace(12)
                                         .show()
                                 }
-                                val savedColor = entity.colorTemp
-                                generalHolder.applyBackgroundColor(savedColor)
                                 isEnabled = entity.enabled
                             }
                         }
@@ -401,6 +413,7 @@ class EntityAdapter(
                                 setOnCheckedChangeListener { _, isChecked ->
                                     entity.state = if (isChecked) "on" else "off"
                                     entity.notifyEntityChanged(preferenceManager)
+                                    notifyItemChanged(holder.bindingAdapterPosition)
                                 }
                             }
                         }
@@ -418,6 +431,7 @@ class EntityAdapter(
                                             textView.text = "$year-${month + 1}-$dayOfMonth"
                                             entity.state = "$year-${month + 1}-$dayOfMonth"
                                             entity.notifyEntityChanged(preferenceManager)
+                                            notifyItemChanged(holder.bindingAdapterPosition)
                                         },
                                         calendar.get(Calendar.YEAR),
                                         calendar.get(Calendar.MONTH),
@@ -471,6 +485,7 @@ class EntityAdapter(
 
     override fun getItemViewType(position: Int): Int {
         return when (val item = items[position]) {
+            is GroupTitle -> ITEM_TYPE_GROUP_TITLE
             is Component -> {
                 when (item.entity.type) {
                     "light" -> ITEM_TYPE_SWITCH
@@ -484,7 +499,8 @@ class EntityAdapter(
                     else -> throw IllegalArgumentException("Invalid entity type")
                 }
             }
-            is GroupTitle -> ITEM_TYPE_GROUP_TITLE
+            else -> throw IllegalArgumentException("Invalid item type")
         }
     }
 }
+
