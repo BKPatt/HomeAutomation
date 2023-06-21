@@ -1,5 +1,6 @@
 package com.example.homeautomation.settings
 
+import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.content.Context
 import android.content.DialogInterface
@@ -11,29 +12,28 @@ import android.graphics.BlendModeColorFilter
 import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
-import android.view.KeyEvent
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.ArrayAdapter
-import android.widget.Button
-import android.widget.CheckBox
-import android.widget.CompoundButton
-import android.widget.EditText
-import android.widget.SeekBar
-import android.widget.Spinner
-import android.widget.Switch
-import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.*
+import android.widget.*
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.example.homeautomation.PreferenceManager
 import com.example.homeautomation.R
 import com.skydoves.colorpickerview.ColorPickerDialog
 import com.skydoves.colorpickerview.listeners.ColorEnvelopeListener
-import java.util.Calendar
+import org.json.JSONException
+import org.json.JSONObject
+import java.util.*
 
-class EntityAdapter(private var items: List<RecyclerViewItem>) :
-    RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class EntityAdapter(
+    private val context: Context,
+    private var items: List<RecyclerViewItem>,
+    private val preferenceManager: PreferenceManager,
+    private var entities: MutableList<HomeAssistantEntity>,
+    var editListener: EditListener
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    private var selectedColor: Int? = null
 
     companion object {
         private const val ITEM_TYPE_SWITCH = 1
@@ -45,6 +45,10 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
         private const val ITEM_TYPE_TEXT_INPUT = 7
         private const val ITEM_TYPE_BUTTON = 8
         private const val ITEM_TYPE_GROUP_TITLE = 9
+    }
+
+    interface EditListener {
+        fun onEntityEdited(entity: HomeAssistantEntity, position: Int)
     }
 
     inner class GeneralViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -77,7 +81,8 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
                 (view as? Button)?.apply {
                     val drawable = ContextCompat.getDrawable(context, R.drawable.rounded_button)
                     background = drawable
-                    drawable?.colorFilter = BlendModeColorFilter(color, BlendMode.SRC_IN)                }
+                    drawable?.colorFilter = BlendModeColorFilter(color, BlendMode.SRC_IN)
+                }
             }
         }
     }
@@ -85,8 +90,6 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
     inner class GroupTitleViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val titleTextView: TextView = itemView.findViewById(R.id.titleTextView)
     }
-
-    private var selectedColor: Int? = null
 
     private fun createGeneralViewHolder(parent: ViewGroup, layoutId: Int): GeneralViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -100,46 +103,125 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
         return GroupTitleViewHolder(view)
     }
 
-    private fun viewTypeToString(viewType: Int): String {
-        return when (viewType) {
-            ITEM_TYPE_SWITCH -> "Switch"
-            ITEM_TYPE_DROPDOWN -> "Dropdown"
-            ITEM_TYPE_SCROLLABLE_BAR -> "Scrollable Bar"
-            ITEM_TYPE_COLOR_PICKER -> "Color Picker"
-            ITEM_TYPE_CHECKBOX -> "Checkbox"
-            ITEM_TYPE_DATE_PICKER -> "Date Picker"
-            ITEM_TYPE_TEXT_INPUT -> "Text Input"
-            ITEM_TYPE_BUTTON -> "Button"
-            ITEM_TYPE_GROUP_TITLE -> "Group Title"
-            else -> throw IllegalArgumentException("Invalid view type")
-        }
+    fun updateItems(items: List<RecyclerViewItem>) {
+        this.items = items
+        notifyDataSetChanged()
     }
 
-    private fun showEditableDialog(context: Context, viewType: Int, entity: HomeAssistantEntity) {
-        // create and set layout of the dialog
-        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_custom, null)
-        val field1EditText = dialogView.findViewById<EditText>(R.id.field1)
-        // TODO: change field 2 to dropdown instead of text input
-        val field2EditText = dialogView.findViewById<EditText>(R.id.field2)
+    private fun showEditableDialog(
+        context: Context,
+        viewType: Int,
+        entity: HomeAssistantEntity,
+        adapterPosition: Int
+    ) {
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.popup_add, null)
+        val friendlyNameEditText = dialogView.findViewById<EditText>(R.id.editTextFriendlyName)
+        val entityIdEditText = dialogView.findViewById<EditText>(R.id.editTextEntityId)
+        val stateText = dialogView.findViewById<EditText>(R.id.editTextState)
+        val enableStateButton = dialogView.findViewById<Button>(R.id.enableEdit)
 
-        // set initial text
-        field1EditText.setText(entity.friendlyName)
+        // Set initial values from the entity object
+        friendlyNameEditText.setText(entity.friendlyName)
+        entityIdEditText.setText(entity.entityId.toString().substringAfterLast("."))
+        stateText.setText(entity.state)
 
-        // Set the input type for the second field based on the entity
-        field2EditText.setText(viewTypeToString(viewType))
+        val entityTypes = arrayOf(
+            "light", "climate", "brightness", "color",
+            "checkbox", "date", "text_input", "button"
+        )
 
-        AlertDialog.Builder(context)
+        val entityTypeSpinner = dialogView.findViewById<Spinner>(R.id.spinnerEntityType)
+        val entityTypeAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, entityTypes)
+        entityTypeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        entityTypeSpinner.adapter = entityTypeAdapter
+
+        // Set the selected item based on the entity type of the provided entity
+        val entityTypeIndex = entityTypes.indexOf(entity.type)
+        if (entityTypeIndex != -1) {
+            entityTypeSpinner.setSelection(entityTypeIndex)
+        }
+
+        val attributesEditText = dialogView.findViewById<EditText>(R.id.editTextAttributes)
+        attributesEditText.setText(entity.attributes?.let { parseAttributesToJson(it) })
+
+        val alertDialog = AlertDialog.Builder(context)
+            .setTitle("Edit Object")
             .setView(dialogView)
             .setPositiveButton("Save") { _, _ ->
-                // save the inputs when the positive button is clicked
-                val field1Input = field1EditText.text.toString()
-                val field2Input = field2EditText.text.toString()
+                val friendlyNameInput = friendlyNameEditText.text.toString()
+                val entityTypeInput = entityTypeSpinner.selectedItem.toString()
+                val entityId = entity.entityId
+                val stateInput = stateText.text.toString()
+                val attributesInput = parseAttributes(attributesEditText.text.toString())
 
-                // TODO: Save the input from user
+                if (friendlyNameInput.isNotEmpty() && entityId.isNotEmpty() && attributesInput != null) {
+                    val updatedEntity = entity.copy(
+                        entityId = entityId,
+                        friendlyName = friendlyNameInput,
+                        type = entityTypeInput,
+                        state = stateInput,
+                        attributes = attributesInput
+                    )
+
+                    val entityIndex = findEntityIndex(entity.entityId)
+                    if (entityIndex != -1) { // if entity was found
+                        updateEntity(updatedEntity, entityIndex)
+                        preferenceManager.saveEntities("entities", entities)
+
+                        // Invoke the editListener to notify the changes to the adapter immediately
+                        editListener.onEntityEdited(updatedEntity, entityIndex)
+                    } else {
+                        // handle case where the entity was not found in the entities list
+                    }
+                }
             }
             .setNegativeButton("Cancel", null)
             .create()
-            .show()
+
+        enableStateButton.setOnClickListener {
+            stateText.isEnabled = true
+            enableStateButton.visibility = View.GONE
+        }
+
+        alertDialog.setOnDismissListener {
+            stateText.isEnabled = false
+            enableStateButton.visibility = View.VISIBLE
+        }
+
+        alertDialog.show()
+    }
+
+    fun updateEntity(entity: HomeAssistantEntity, position: Int) {
+        entities[position] = entity
+        notifyItemChanged(position)
+    }
+
+    private fun parseAttributesToJson(attributes: Map<String, Any>): String {
+        val attributesJson = JSONObject(attributes)
+        return attributesJson.toString()
+    }
+
+    private fun findEntityIndex(entityId: String): Int {
+        return entities.indexOfFirst { it.entityId == entityId }
+    }
+
+    private fun parseAttributes(attributesString: String): Map<String, Any>? {
+        if (attributesString.isBlank()) {
+            return emptyMap()
+        }
+
+        return try {
+            val attributesJson = JSONObject(attributesString)
+            val keys = attributesJson.keys()
+            val attributes = mutableMapOf<String, Any>()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                attributes[key] = attributesJson.get(key)
+            }
+            attributes
+        } catch (e: JSONException) {
+            null
+        }
     }
 
     private fun scaleDrawable(context: Context, drawableId: Int, width: Int, height: Int): Drawable {
@@ -193,7 +275,12 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
         when (val item = items[position]) {
             is GroupTitle -> {
                 val groupTitleViewHolder = holder as GroupTitleViewHolder
-                groupTitleViewHolder.titleTextView.text = item.title
+                if (item.title != null) {
+                    groupTitleViewHolder.titleTextView.text = item.title
+                    groupTitleViewHolder.titleTextView.visibility = View.VISIBLE
+                } else {
+                    groupTitleViewHolder.titleTextView.visibility = View.GONE
+                }
             }
             is Component -> {
                 val entity = item.entity
@@ -209,7 +296,7 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
                             setCompoundDrawablesWithIntrinsicBounds(null, null, editDrawable, null)
                             compoundDrawablePadding = 10
                             setOnClickListener {
-                                showEditableDialog(context, viewType, entity)
+                                showEditableDialog(context, viewType, entity, holder.bindingAdapterPosition)
                             }
                         } else {
                             setOnClickListener(null)
@@ -225,6 +312,11 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
                                 isChecked = entity.state == "on"
                                 isEnabled = entity.enabled
                                 updateButtonColors(view, isChecked, isEnabled)
+                                setOnCheckedChangeListener { _, isChecked ->
+                                    entity.state = if (isChecked) "on" else "off"
+                                    entity.notifyEntityChanged(preferenceManager)
+                                    notifyItemChanged(holder.bindingAdapterPosition)
+                                }
                             }
                         }
                     }
@@ -237,6 +329,20 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
                                     entity.availableModes ?: listOf()
                                 )
                                 isEnabled = entity.enabled
+                                onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                                    override fun onItemSelected(
+                                        parent: AdapterView<*>?,
+                                        view: View?,
+                                        position: Int,
+                                        id: Long
+                                    ) {
+                                        val selectedMode = parent?.getItemAtPosition(position).toString()
+                                        entity.currentMode = selectedMode
+                                        entity.notifyEntityChanged(preferenceManager)
+                                    }
+
+                                    override fun onNothingSelected(parent: AdapterView<*>?) {}
+                                }
                             }
                         }
                     }
@@ -245,20 +351,43 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
                             (view as? SeekBar)?.apply {
                                 progress = entity.brightness
                                 isEnabled = entity.enabled
+                                setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                                    override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                                        entity.brightness = progress
+                                        entity.notifyEntityChanged(preferenceManager)
+                                    }
+
+                                    override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                                        // No action needed
+                                    }
+
+                                    override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                                        // No action needed
+                                    }
+                                })
                             }
                         }
                     }
                     ITEM_TYPE_COLOR_PICKER -> {
                         generalHolder.views[R.id.colorPickerButton]?.let { view ->
                             (view as? Button)?.apply {
+                                // Set the initial color to white (RGB: 255, 255, 255)
+                                val initialColor = Color.rgb(255, 255, 255)
+                                selectedColor = initialColor
+                                entity.colorTemp = initialColor
+                                entity.notifyEntityChanged(preferenceManager)
+                                generalHolder.applyBackgroundColor(initialColor)
+
                                 setOnClickListener {
                                     ColorPickerDialog.Builder(view.context)
                                         .setTitle("ColorPicker Dialog")
                                         .setPreferenceName("MyColorPickerDialog")
                                         .setPositiveButton(
                                             "Confirm",
-                                            ColorEnvelopeListener { envelope, fromUser ->
+                                            ColorEnvelopeListener { envelope, _ ->
                                                 selectedColor = envelope.color
+                                                entity.colorTemp = selectedColor ?: 0
+                                                entity.notifyEntityChanged(preferenceManager)
                                                 generalHolder.applyBackgroundColor(selectedColor ?: 0)
                                             })
                                         .setNegativeButton(
@@ -266,7 +395,7 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
                                             DialogInterface.OnClickListener { dialogInterface, _ ->
                                                 dialogInterface.dismiss()
                                             })
-                                        .attachAlphaSlideBar(true)
+                                        .attachAlphaSlideBar(false)
                                         .attachBrightnessSlideBar(true)
                                         .setBottomSpace(12)
                                         .show()
@@ -281,6 +410,11 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
                                 isChecked = entity.state == "on"
                                 isEnabled = entity.enabled
                                 updateButtonColors(view, isChecked, isEnabled)
+                                setOnCheckedChangeListener { _, isChecked ->
+                                    entity.state = if (isChecked) "on" else "off"
+                                    entity.notifyEntityChanged(preferenceManager)
+                                    notifyItemChanged(holder.bindingAdapterPosition)
+                                }
                             }
                         }
                     }
@@ -295,6 +429,9 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
                                         it.context,
                                         { _, year, month, dayOfMonth ->
                                             textView.text = "$year-${month + 1}-$dayOfMonth"
+                                            entity.state = "$year-${month + 1}-$dayOfMonth"
+                                            entity.notifyEntityChanged(preferenceManager)
+                                            notifyItemChanged(holder.bindingAdapterPosition)
                                         },
                                         calendar.get(Calendar.YEAR),
                                         calendar.get(Calendar.MONTH),
@@ -312,6 +449,15 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
                             (view as? EditText)?.apply {
                                 setText(entity.state)
                                 isEnabled = entity.enabled
+                                isFocusableInTouchMode = entity.enabled
+                                addTextChangedListener(object : TextWatcher {
+                                    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                                    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                                    override fun afterTextChanged(s: Editable?) {
+                                        entity.state = s?.toString() ?: ""
+                                        entity.notifyEntityChanged(preferenceManager)
+                                    }
+                                })
                             }
                         }
                     }
@@ -320,11 +466,13 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
                             (view as? Button)?.apply {
                                 setOnClickListener {
                                     // TODO: Add call
+                                    entity.notifyEntityChanged(preferenceManager)
                                 }
                                 isEnabled = entity.enabled
                             }
                         }
                     }
+
                     else -> throw IllegalArgumentException("Invalid view type")
                 }
             }
@@ -337,6 +485,7 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
 
     override fun getItemViewType(position: Int): Int {
         return when (val item = items[position]) {
+            is GroupTitle -> ITEM_TYPE_GROUP_TITLE
             is Component -> {
                 when (item.entity.type) {
                     "light" -> ITEM_TYPE_SWITCH
@@ -350,7 +499,8 @@ class EntityAdapter(private var items: List<RecyclerViewItem>) :
                     else -> throw IllegalArgumentException("Invalid entity type")
                 }
             }
-            is GroupTitle -> ITEM_TYPE_GROUP_TITLE
+            else -> throw IllegalArgumentException("Invalid item type")
         }
     }
 }
+

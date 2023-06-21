@@ -10,7 +10,7 @@ import com.example.homeautomation.dropDown.PopupMenuHelper
 import com.google.android.material.navigation.NavigationView
 import com.example.homeautomation.login.HomeAutomationLoginActivity
 import com.example.homeautomation.navigationDrawer.NavigationDrawerHelper
-import com.example.homeautomation.settings.HomescreenSettingsActivity
+import com.example.homeautomation.settings.HomeScreenSettingsActivity
 import com.example.homeautomation.signup.HomeAutomationSignupActivity
 
 class MainActivity : AppCompatActivity() {
@@ -54,7 +54,7 @@ class MainActivity : AppCompatActivity() {
         navigationDrawerHelper = NavigationDrawerHelper(this, drawerLayout, navigationView)
 
         settingsButton.setOnClickListener {
-            val intent = Intent(this, HomescreenSettingsActivity::class.java)
+            val intent = Intent(this, HomeScreenSettingsActivity::class.java)
             startActivity(intent)
         }
 

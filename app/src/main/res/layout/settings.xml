@@ -57,12 +57,25 @@
             android:visibility="visible" />
 
         <Button
+            android:id="@+id/add"
+            android:layout_width="125dp"
+            android:layout_height="wrap_content"
+            android:text="@string/add"
+            android:textColor="#000000"
+            android:padding="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_gravity="center"
+            android:background="@drawable/rounded_button"
+            android:visibility="gone" />
+
+        <Button
             android:id="@+id/backAfterEdit"
             android:layout_width="125dp"
             android:layout_height="wrap_content"
             android:text="@string/back"
             android:textColor="#000000"
             android:padding="8dp"
+            android:layout_marginLeft="8dp"
             android:layout_gravity="center"
             android:background="@drawable/rounded_button"
             android:visibility="gone" />
